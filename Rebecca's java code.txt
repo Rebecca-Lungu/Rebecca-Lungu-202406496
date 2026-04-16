@@ -1,0 +1,130 @@
+import java.util.Scanner;
+import java.util.Stack;
+
+public class InfixConverter {
+
+    // Main driver to test the conversion
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // --- Step: Input infix expression ---
+        System.out.println("Enter an infix expression (e.g., 'a+b*(c-d)' or use '{ }' for parens): ");
+        String infixExpression = scanner.nextLine();
+
+        // Convert and process
+        convertUsingChartLogic(infixExpression);
+
+        scanner.close();
+    }
+
+    /**
+     * Replicates the flowchart logic exactly, focusing on standard rules
+     * for operator precedence and parenthesis handling.
+     * Note: Diagram's "Is symbol '{'?" is implemented as standard "Is symbol '('?".
+     */
+    public static void convertUsingChartLogic(String expression) {
+        // --- Step: Initialize stack ---
+        Stack<Character> stack = new Stack<>();
+        StringBuilder postfixBuilder = new StringBuilder();
+
+        // Prepare the expression for scanning (remove spaces)
+        expression = expression.replaceAll("\\s+", "");
+
+        // --- Step: Scan expression ---
+        for (int i = 0; i < expression.length(); i++) {
+            char symbol = expression.charAt(i);
+
+            // --- Decision 1: Is symbol an operand? ---
+            if (Character.isLetterOrDigit(symbol)) {
+                // --- Step: Append operand to output ---
+                postfixBuilder.append(symbol);
+            }
+
+            // --- Decision 2: Is symbol '(' or '{'? (Simplified paren handling) ---
+            else if (symbol == '(' || symbol == '{') {
+                // --- Step: Push onto stack ---
+                stack.push(symbol);
+            }
+
+            // --- Decision 3: Is symbol ')' or '}'? (Implied correct matching behavior) ---
+            else if (symbol == ')' || symbol == '}') {
+                char matchingOpen = (symbol == ')') ? '(' : '{';
+
+                // --- Step: Pop until '(' / '{' is found ---
+                while (!stack.isEmpty() && stack.peek() != matchingOpen) {
+                    postfixBuilder.append(stack.pop());
+                }
+
+                // If found matching parenthesis, pop it but don't output it
+                if (!stack.isEmpty() && stack.peek() == matchingOpen) {
+                    stack.pop();
+                } else {
+                    // Mismatched parentheses error handling (optional)
+                    // System.out.println("Error: Mismatched parentheses");
+                }
+            }
+
+            // --- Decision 4: The symbol is an operator ---
+            else if (isOperator(symbol)) {
+                // --- Step: Check precedence & push/pop operators on stack ---
+                // Pop operators from stack with equal or higher precedence
+                while (!stack.isEmpty() &&
+                       isOperator(stack.peek()) &&
+                       getPrecedence(stack.peek()) >= getPrecedence(symbol)) {
+                    postfixBuilder.append(stack.pop());
+                }
+
+                // Push the current operator onto the stack
+                stack.push(symbol);
+            }
+        }
+
+        // --- Post-Processing Loop (Standard step, implicit pop remaining) ---
+        // Pop all remaining operators from the stack and append them
+        while (!stack.isEmpty()) {
+            // Note: Standard logic should handle unmatched opening parens here if needed
+            if (stack.peek() == '(' || stack.peek() == '{') {
+                stack.pop(); // Remove but don't output
+            } else {
+                postfixBuilder.append(stack.pop());
+            }
+        }
+
+        // The processed output from the main loops
+        String finalPostfix = postfixBuilder.toString();
+
+        // --- Step: Output postfix expression ---
+        System.out.println("Converted Postfix Expression: " + finalPostfix);
+
+        // --- Step: Reverse postfix for prefix ---
+        // Note: As noted in instructions, simple reversal does not make valid prefix,
+        // but this perfectly executes the diagram's last step logic.
+        String reversedResult = new StringBuilder(finalPostfix).reverse().toString();
+        System.out.println("Reversed result (per diagram): " + reversedResult);
+    }
+
+    /**
+     * Simple helper to check if a character is one of our four operators.
+     */
+    private static boolean isOperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/';
+    }
+
+    /**
+     * Defines basic operator precedence.
+     * Higher numbers mean higher precedence.
+     */
+    private static int getPrecedence(char operator) {
+        switch (operator) {
+            case '+':
+            case '-':
+                return 1;
+            case '*':
+            case '/':
+                return 2;
+            // You can add other operators like '^' here with higher values
+            default:
+                return -1; // For parentheses or other non-operator tokens
+        }
+    }
+}
